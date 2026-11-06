@@ -5,7 +5,9 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PastOrPresent;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -57,6 +59,7 @@ public class Measurement {
 	private Double value;
 
 	@NotNull
+	@PastOrPresent(message = "Pole timestamp nie może wskazywać przyszłości")
 	@JsonProperty("timestamp")
 	@Setter
 	private Instant measuredAt;
@@ -69,5 +72,11 @@ public class Measurement {
 	@JsonSetter("timestamp")
 	void setTimestamp(String timestamp) {
 		this.requestedTimestamp = timestamp;
+	}
+
+	@AssertTrue(message = "Wartość musi mieścić się w przedziale serii")
+	@JsonIgnore
+	boolean isValueInRange() {
+		return this.value == null || this.series == null || this.value >= this.series.getMinValue() && this.value <= this.series.getMaxValue();
 	}
 }

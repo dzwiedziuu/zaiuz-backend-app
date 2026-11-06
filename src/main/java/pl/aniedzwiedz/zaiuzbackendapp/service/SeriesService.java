@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import pl.aniedzwiedz.zaiuzbackendapp.model.Series;
+import pl.aniedzwiedz.zaiuzbackendapp.repository.MeasurementRepository;
 import pl.aniedzwiedz.zaiuzbackendapp.repository.SeriesRepository;
 import pl.aniedzwiedz.zaiuzbackendapp.validation.EntityValidator;
 
@@ -16,10 +17,13 @@ public class SeriesService {
 
 	private final SeriesRepository series;
 
+	private final MeasurementRepository measurements;
+
 	private final EntityValidator validator;
 
-	SeriesService(SeriesRepository series, EntityValidator validator) {
+	SeriesService(SeriesRepository series, MeasurementRepository measurements, EntityValidator validator) {
 		this.series = series;
+		this.measurements = measurements;
 		this.validator = validator;
 	}
 
@@ -41,6 +45,9 @@ public class SeriesService {
 		ensureExists(id);
 		input.setId(id);
 		this.validator.validate(input);
+		if (this.measurements.existsOutsideRange(id, input.getMinValue(), input.getMaxValue())) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT, "Seria ma wyniki spoza nowego przedziału [" + input.getMinValue() + ", " + input.getMaxValue() + "]");
+		}
 		return this.series.save(input);
 	}
 
