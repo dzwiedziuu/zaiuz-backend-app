@@ -1,0 +1,13 @@
+target/
+.git/
+.idea/
+.mvn/
+.vscode/
+*.iml
+generator/
+src/test/
+.env
+.env.*
+HELP.md
+Dockerfile
+.dockerignore
