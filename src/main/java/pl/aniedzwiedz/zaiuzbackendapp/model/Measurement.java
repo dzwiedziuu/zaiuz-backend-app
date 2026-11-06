@@ -7,7 +7,6 @@ import com.fasterxml.jackson.annotation.JsonSetter;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.PastOrPresent;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,6 +16,7 @@ import lombok.Setter;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
+import java.time.Duration;
 import java.time.Instant;
 
 @Entity
@@ -30,6 +30,8 @@ import java.time.Instant;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
 public class Measurement {
+
+	private static final Duration MAX_CLOCK_SKEW = Duration.ofMinutes(5);
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -63,7 +65,6 @@ public class Measurement {
 	private Double value;
 
 	@NotNull
-	@PastOrPresent(message = "Pole timestamp nie może wskazywać przyszłości")
 	@JsonProperty("timestamp")
 	@Setter
 	private Instant measuredAt;
@@ -76,6 +77,12 @@ public class Measurement {
 	@JsonSetter("timestamp")
 	void setTimestamp(String timestamp) {
 		this.requestedTimestamp = timestamp;
+	}
+
+	@AssertTrue(message = "Pole timestamp nie może być późniejsze niż 5 minut od bieżącego czasu serwera")
+	@JsonIgnore
+	boolean isTimestampAllowed() {
+		return this.measuredAt == null || !this.measuredAt.isAfter(Instant.now().plus(MAX_CLOCK_SKEW));
 	}
 
 	@AssertTrue(message = "Wartość musi mieścić się w przedziale serii")
