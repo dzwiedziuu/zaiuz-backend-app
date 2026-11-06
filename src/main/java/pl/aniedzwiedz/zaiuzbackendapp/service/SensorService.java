@@ -8,6 +8,7 @@ import org.springframework.web.server.ResponseStatusException;
 import pl.aniedzwiedz.zaiuzbackendapp.model.Sensor;
 import pl.aniedzwiedz.zaiuzbackendapp.repository.SensorRepository;
 import pl.aniedzwiedz.zaiuzbackendapp.repository.SeriesRepository;
+import pl.aniedzwiedz.zaiuzbackendapp.security.TokenHasher;
 import pl.aniedzwiedz.zaiuzbackendapp.validation.EntityValidator;
 
 import java.time.Instant;
@@ -24,10 +25,13 @@ public class SensorService {
 
 	private final EntityValidator validator;
 
-	SensorService(SensorRepository sensors, SeriesRepository series, EntityValidator validator) {
+	private final TokenHasher hasher;
+
+	SensorService(SensorRepository sensors, SeriesRepository series, EntityValidator validator, TokenHasher hasher) {
 		this.sensors = sensors;
 		this.series = series;
 		this.validator = validator;
+		this.hasher = hasher;
 	}
 
 	public List<Sensor> list() {
@@ -41,13 +45,13 @@ public class SensorService {
 	@Transactional
 	public String create(Sensor input) {
 		input.setCreatedAt(Instant.now().truncatedTo(ChronoUnit.MICROS));
-		input.generateKeyHash();
+		String apiKey = input.generateKeyHash(hasher);
 		this.validator.validate(input);
 		if (!this.series.existsById(input.getSeriesId())) {
 			throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_CONTENT, "Wskazana seria nie istnieje");
 		}
 		this.sensors.save(input);
-		return input.getKeyHash();
+		return apiKey;
 	}
 
 	@Transactional

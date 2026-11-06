@@ -6,11 +6,13 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
+import pl.aniedzwiedz.zaiuzbackendapp.security.TokenHasher;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -42,6 +44,7 @@ public class Sensor {
 	@NotNull
 	@Column(unique = true)
 	@JsonIgnore
+	@Getter(AccessLevel.NONE)
 	private String keyHash;
 
 	@NotNull
@@ -49,7 +52,9 @@ public class Sensor {
 	@Setter
 	private Instant createdAt;
 
-	public void generateKeyHash() {
-		this.keyHash = UUID.randomUUID().toString();
+	public String generateKeyHash(TokenHasher hasher) {
+		String apiKey = UUID.randomUUID().toString().replace("-", "");
+		this.keyHash = hasher.hash(apiKey);
+		return apiKey;
 	}
 }
