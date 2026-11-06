@@ -7,9 +7,6 @@ import com.fasterxml.jackson.annotation.JsonSetter;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotNull;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -27,8 +24,6 @@ import java.time.Instant;
 })
 @Getter
 @NoArgsConstructor
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
-@Builder
 public class Measurement {
 
 	private static final Duration MAX_CLOCK_SKEW = Duration.ofMinutes(5);

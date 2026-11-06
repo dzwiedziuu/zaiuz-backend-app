@@ -18,6 +18,13 @@ import java.util.Map;
 @RestControllerAdvice
 class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 
+	// mapowanie pol technicznych (domniemanych na podstawie refleksji) na pola w API
+	private static final Map<String, String> API_FIELDS = Map.of(
+			"measuredAt", "timestamp",
+			"timestampAllowed", "timestamp",
+			"valueInRange", "value",
+			"rangeValid", "maxValue");
+
 	@Override
 	protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
 		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_CONTENT, "Dane nie spełniają reguł walidacji");
@@ -35,7 +42,10 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_CONTENT, "Dane nie spełniają reguł walidacji");
 		List<Map<String, String>> errors = ex.getConstraintViolations()
 			.stream()
-			.map((v) -> Map.of("field", v.getPropertyPath().toString(), "message", message(leafName(v.getPropertyPath()), v)))
+			.map((v) -> {
+				String field = apiField(leafName(v.getPropertyPath()));
+				return Map.of("field", field, "message", message(field, v));
+			})
 			.toList();
 		problem.setProperty("errors", errors);
 		return handleExceptionInternal(ex, problem, new HttpHeaders(), HttpStatus.UNPROCESSABLE_CONTENT, request);
@@ -68,6 +78,10 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 			return "musi mieć co najmniej " + size.min() + " znaków";
 		}
 		return "musi mieć od " + size.min() + " do " + size.max() + " znaków";
+	}
+
+	private static String apiField(String name) {
+		return API_FIELDS.getOrDefault(name, name);
 	}
 
 	private static String leafName(Path path) {
